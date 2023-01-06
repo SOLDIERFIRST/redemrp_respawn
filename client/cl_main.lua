@@ -47,9 +47,24 @@ AddEventHandler("redemrp_respawn:KillPlayer", function(c)
     Citizen.InvokeNative(0x697157CED63F18D4, ped, 500000, false, true, true)
 end)
 
+function Button_Prompt()
+	Citizen.CreateThread(function()
+		local str = "Wake Up Nearby"
+		newlife = Citizen.InvokeNative(0x04F97DE45A519419)
+		PromptSetControlAction(newlife, 0xCEFD9220)
+		str = CreateVarString(10, 'LITERAL_STRING', str)
+		PromptSetText(newlife, str)
+		PromptSetEnabled(newlife, false)
+		PromptSetVisible(newlife, false)
+		PromptSetHoldMode(newlife, true)
+		PromptSetGroup(newlife, revive_prompt)
+		PromptRegisterEnd(newlife)
+	end)
+end 
 
 local onPlayerDead = false
 Citizen.CreateThread(function()
+    Button_Prompt()
     while true do
         Wait(0)
         while IsPlayerDead(PlayerId()) and not revived do
@@ -67,19 +82,20 @@ Citizen.CreateThread(function()
                         DisplayHud(false)
                         DisplayRadar(false)
                         exports.spawnmanager:setAutoSpawn(false)
-                        Citizen.InvokeNative(0xFA08722A5EA82DA7, "LensDistDrunk")
+                        Citizen.InvokeNative(0xFA08722A5EA82DA7, "FIRSTPERSON_glasses_dark")
                         Citizen.InvokeNative(0xFDB74C9CC54C3F37, 1.0)
                         TriggerServerEvent("redemrp_respawn:DeadTable", "add" , code)
-                        AnimpostfxPlay("DeathFailMP01")
                         StartDeathCam()
                         onPlayerDead = true
                     end
 
                     Wait(1)
                     ProcessCamControls()
-                    DrawTxt(Config.LocaleTimer .. " " .. tonumber(string.format("%.0f", (((GetGameTimer() - timer) * -1)/1000))), 0.50, 0.80, 0.7, 0.7, true, 255, 255, 255, 255, true)
-                    
-
+                    DrawTxt("You will wake up in " .. tonumber(string.format("%.0f", (((GetGameTimer() - timer) * -1)/1000))) .. " seconds.", 0.895, 0.88, 0.0, 0.5, true, 255, 255, 255, 255, true)
+                    PromptSetEnabled(newlife, false)
+		            PromptSetVisible(newlife, true)
+                    DisableControlAction(0, 0x4CC0E2FE, true)
+                    DisableControlAction(0, 0xB238FE0B, true)
                 else
                     break
                 end
@@ -87,8 +103,18 @@ Citizen.CreateThread(function()
             while true do
                 Wait(0)
                 ProcessCamControls()
-                DrawTxt("Press E to Respawn", 0.50, 0.45, 1.0, 1.0, true, 255, 255, 255, 255, true)
-                if IsControlJustReleased(0, 0xDFF812F9) or revived then
+                --DrawTxt("Pockets will be emptied of items.", 0.90, 0.962, 0.4, 0.4, true, 255, 255, 255, 255, true)
+                PromptSetEnabled(newlife, true)
+		        PromptSetVisible(newlife, true)
+                DisableControlAction(0, 0x4CC0E2FE, true)
+                DisableControlAction(0, 0xB238FE0B, true)               
+                if PromptHasHoldModeCompleted(newlife) then
+                    PromptSetEnabled(newlife, false)
+                    PromptSetVisible(newlife, false)
+                    DoScreenFadeOut(500)
+                    presserespawn()
+                end 
+                if revived then
                     break
                 end
             end
@@ -96,10 +122,11 @@ Citizen.CreateThread(function()
             revived = false
             onPlayerDead = false
             TriggerServerEvent("redemrp_respawn:DeadTable", "remove" , code)
+            PromptSetEnabled(newlife, false)
+            PromptSetVisible(newlife, false)
         end
     end
 end)
-
 
 function respawn(changetown)
     if changetown then
@@ -118,10 +145,90 @@ function respawn(changetown)
     local ped = Citizen.InvokeNative(0x275F255ED201B937, pl)
     local coords = GetEntityCoords(ped, false)
     SetEntityCoords(ped, coords.x, coords.y, coords.z)
-    FreezeEntityPosition(ped, true)
+    FreezeEntityPosition(ped, false)
     Citizen.InvokeNative(0x71BC8E838B9C6035, ped)
     Citizen.InvokeNative(0x0E3F4AF2D63491FB)
+    Citizen.InvokeNative(0xFA08722A5EA82DA7, "FIRSTPERSON_glasses_dark")
+    Citizen.InvokeNative(0xFDB74C9CC54C3F37, 0.0)
 end
+
+function presserespawn()
+    revived = true
+    onPlayerDead = false
+    EndDeathCam()
+    AnimpostfxStop("DeathFailMP01")
+    ShakeGameplayCam("DRUNK_SHAKE", 0.0)
+    DestroyAllCams(true)
+
+    local pl = Citizen.InvokeNative(0x217E9DC48139933D)
+    local ped = Citizen.InvokeNative(0x275F255ED201B937, pl)
+    local coords = GetEntityCoords(ped, false)
+    local spawntown = Citizen.InvokeNative(0x43AD8FC02B429D33,coords.x,coords.y,coords.z,10)
+-- west elizabeth
+    if spawntown == 822658194 --[[(Big Valley)]] or spawntown == -120156735 --[[(Grizzlies East)]] then -- strawberry
+        SetEntityCoords(ped, -1841.377, -405.8665, 165.8613)
+        SetEntityHeading(ped, 231.1281)
+    end 
+    if spawntown == 476637847 --[[(Great Plains)]] or spawntown == 1684533001 --[[(Tall Trees)]] then -- blackwater
+        SetEntityCoords(ped, -728.1979, -1243.248, 44.74409)
+        SetEntityHeading(ped, 86.40054)
+    end
+-- new hanover
+    if spawntown == 1835499550 --[[(Cumberland)]] or spawntown == 131399519 --[[(Heartlands)]] then -- valentine
+        SetEntityCoords(ped, -168.2004, 628.075, 114.0421)
+        SetEntityHeading(ped, 231.1281)
+    end
+    if spawntown == 178647645 --[[(Roanoke Ridge)]] or spawntown == 1645618177 --[[(Grizzlies West)]] then -- annesburg
+        SetEntityCoords(ped, 2947.209, 1282.661, 44.67347)
+        SetEntityHeading(ped, 260.2)
+    end
+-- lemoyne
+    if spawntown == 2025841068 --[[(Bayou Nwa)]] or spawntown == 1308232528 --[[(Bluewater Marsh)]] then --saint denis
+        SetEntityCoords(ped, 2873.945, -1347.046, 42.62447) 
+        SetEntityHeading(ped, 49.80801)
+    end
+    if spawntown == -864275692 --[[(Scarlett Meadows)]] then -- rhodes
+        SetEntityCoords(ped, 1241.947, -1310.389, 76.9493)
+        SetEntityHeading(ped, 130.71)
+    end
+-- new austin
+    if spawntown == 892930832 --[[(Hennigan's Stead)]] then -- armadillo
+        SetEntityCoords(ped, -3742.364, -2601.25, -13.18227)
+        SetEntityHeading(ped, 66.3)
+    end
+    if spawntown == -108848014 --[[(Cholla Springs)]] or spawntown == -2145992129 --[[(Rio Bravo)]] or spawntown == -2066240242 --[[(Gaptooth Ridge)]] then -- tumbleweed
+        SetEntityCoords(ped, -3742.364, -2601.25, -13.18227)
+        SetEntityHeading(ped, 16.25)
+    end
+-- special
+    if spawntown == 613867492 --[[(Nuevo Paraiso)]] then -- mexico
+        SetEntityCoords(ped, 0, 0, 0)
+        SetEntityHeading(ped, 0.0)
+    end
+    if spawntown == 1935063277 --[[(Guarma)]] then -- guarma
+        SetEntityCoords(ped, 0, 0, 0)
+        SetEntityHeading(ped, 0.0)
+    end
+    if spawntown == 2147354003 --[[(Sisika)]] then -- sisika
+        SetEntityCoords(ped, 3332.72, -671.4, 45.68)
+        SetEntityHeading(ped, 0.0)
+    end
+-- end spawn zones ---
+    FreezeEntityPosition(ped, false)
+    Citizen.InvokeNative(0x71BC8E838B9C6035, ped)
+    Citizen.InvokeNative(0x0E3F4AF2D63491FB)
+    Citizen.InvokeNative(0xFA08722A5EA82DA7, "FIRSTPERSON_glasses_dark")
+    Citizen.InvokeNative(0xFDB74C9CC54C3F37, 0.0)
+    DoScreenFadeIn(2500)
+end
+-----------------------------------------FIND DISTRICT COMMAND-----------------------------------
+--[[ RegisterCommand("whereami", function(source, args)
+	local pl = Citizen.InvokeNative(0x217E9DC48139933D)
+    local ped = Citizen.InvokeNative(0x275F255ED201B937, pl)
+	local coords = GetEntityCoords(ped, false)
+	local state = Citizen.InvokeNative(0x43AD8FC02B429D33,coords.x,coords.y,coords.z,10)
+	print(state)
+end)  ]]
 
 RegisterNetEvent("redemrp_respawn:respawn")
 AddEventHandler("redemrp_respawn:respawn", function(new)
@@ -205,30 +312,8 @@ function SavePosition()
 end
 
 function RespawnCamera(_coords)
-    DoScreenFadeIn(500)
-    local coords = _coords
-    cam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", 621.67,374.08,873.24, 300.00,0.00,0.00, 100.00, false, 0) -- CAMERA COORDS
-    PointCamAtCoord(cam, coords.x,coords.y,coords.z+200)
-    SetCamActive(cam, true)
-    RenderScriptCams(true, false, 1, true, true)
-    DoScreenFadeIn(500)
-    Citizen.Wait(500)
-
-    cam3 = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", coords.x,coords.y,coords.z+200, 300.00,0.00,0.00, 100.00, false, 0)
-    PointCamAtCoord(cam3, coords.x,coords.y,coords.z+200)
-    SetCamActiveWithInterp(cam3, cam, 3700, true, true)
-    Citizen.Wait(3700)
-
-    cam2 = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", coords.x,coords.y,coords.z+200, 300.00,0.00,0.00, 100.00, false, 0)
-    PointCamAtCoord(cam2, coords.x,coords.y,coords.z+2)
-    SetCamActiveWithInterp(cam2, cam3, 3700, true, true)
-    RenderScriptCams(false, true, 500, true, true)
-    Citizen.Wait(500)
-    SetCamActive(cam, false)
-	FreezeEntityPosition(PlayerPedId(), false)
-    DestroyCam(cam, true)
-    DestroyCam(cam2, true)
-    DestroyCam(cam3, true)
+    DoScreenFadeIn(100)
+    FreezeEntityPosition(PlayerPedId(), false)
     DisplayHud(true)
     DisplayRadar(true)
     Citizen.Wait(3000)
@@ -353,3 +438,47 @@ function ProcessNewPosition()
 
     return pos
 end
+
+exports("ReviveCheckIn", function()
+    if not revived then
+        revived = true
+    end
+
+    respawn(false, true)
+end)
+
+function GetClosestPlayer()
+    local players, closestDistance, closestPlayer = GetActivePlayers(), -1, -1
+    local playerPed = PlayerPedId()
+    local playerId = PlayerId()
+    local coords, usePlayerPed = coords, false
+    
+    if coords then
+        coords = vector3(coords.x, coords.y, coords.z)
+    else
+        usePlayerPed = true
+        coords = GetEntityCoords(playerPed)
+    end
+    
+    for i=1, #players, 1 do
+        local tgt = GetPlayerPed(players[i])
+
+        if not usePlayerPed or (usePlayerPed and players[i] ~= playerId) then
+
+            local targetCoords = GetEntityCoords(tgt)
+            local distance = #(coords - targetCoords)
+
+            if closestDistance == -1 or closestDistance > distance then
+                closestPlayer = players[i]
+                closestDistance = distance
+            end
+        end
+    end
+    return closestPlayer, closestDistance
+end
+
+RegisterNetEvent('playerSpawned')
+AddEventHandler('playerSpawned', function()
+    Citizen.Wait(1000)
+    Citizen.InvokeNative(0xC6258F41D86676E0, PlayerPedId(), 0, 100)
+end)
