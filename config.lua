@@ -1,5 +1,5 @@
 Config = {}
-Config.RespawnTime = 5000
+Config.RespawnTime = 300
 Config.LocaleDead = "You died!"
 Config.LocaleTimer = "Wake Up Nearby in"
 Config.PressRespawn = "[E] to Wake Up Nearby"
