@@ -27,6 +27,7 @@ AddEventHandler("redemrp_respawn:gotRevive", function(c)
     Wait(500)
     revived = true
     Wait(1000)
+    TriggerServerEvent('redemrp_status:AddAmount', 100, 100)
     RespawnCamera(GetEntityCoords(PlayerPedId()))
 end)
 
@@ -69,7 +70,7 @@ Citizen.CreateThread(function()
         Wait(0)
         while IsPlayerDead(PlayerId()) and not revived do
             Wait(1)
-            local timer = GetGameTimer()+Config.RespawnTime
+            local timer = GetGameTimer()+(Config.RespawnTime * 1000)
             while timer >= GetGameTimer() and not revived do
                 if revived == false then
 
@@ -159,7 +160,8 @@ function presserespawn()
     AnimpostfxStop("DeathFailMP01")
     ShakeGameplayCam("DRUNK_SHAKE", 0.0)
     DestroyAllCams(true)
-
+    TriggerServerEvent('redemrp_status:AddAmount', 100, 100)
+    
     local pl = Citizen.InvokeNative(0x217E9DC48139933D)
     local ped = Citizen.InvokeNative(0x275F255ED201B937, pl)
     local coords = GetEntityCoords(ped, false)
@@ -220,6 +222,10 @@ function presserespawn()
     Citizen.InvokeNative(0xFA08722A5EA82DA7, "FIRSTPERSON_glasses_dark")
     Citizen.InvokeNative(0xFDB74C9CC54C3F37, 0.0)
     DoScreenFadeIn(2500)
+    EnableControlAction(0, 0x4CC0E2FE, true)
+    EnableControlAction(0, 0xB238FE0B, true)
+    DisplayHud(true)
+    DisplayRadar(true)
 end
 -----------------------------------------FIND DISTRICT COMMAND-----------------------------------
 --[[ RegisterCommand("whereami", function(source, args)
@@ -369,7 +375,6 @@ function EndDeathCam()
     end)
 end
 
-
 function ProcessCamControls()
     Citizen.CreateThread(function()
 
@@ -481,4 +486,8 @@ RegisterNetEvent('playerSpawned')
 AddEventHandler('playerSpawned', function()
     Citizen.Wait(1000)
     Citizen.InvokeNative(0xC6258F41D86676E0, PlayerPedId(), 0, 100)
+    Citizen.InvokeNative(0x4CC5F2FC1332577F, GetHashKey("HUD_CTX_GOLD_CURRENCY_CHANGE")) --gold                              
+    Citizen.InvokeNative(0x4CC5F2FC1332577F, GetHashKey("HUD_CTX_PROMPT_MONEY")) --GameMoneyHUD
+    -- Citizen.InvokeNative(0x4CC5F2FC1332577F, GetHashKey("HUD_CTX_INFINITE_AMMO")) -- In case u still have problems with HUD
+    Citizen.InvokeNative(0x4CC5F2FC1332577F, GetHashKey("HUD_CTX_SHARP_SHOOTER_EVENT")) -- In case u still have problems with HUD
 end)
